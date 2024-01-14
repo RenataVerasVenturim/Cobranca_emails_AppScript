@@ -1,0 +1,73 @@
+function CriarRascunho() {
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.alert("Deseja criar um e-mail rascunho para pré-visualizar?", ui.ButtonSet.YES_NO);
+
+  if (response == ui.Button.YES) {
+    var nomeDaAba = "Cobrança 2023";
+
+    // Obtenha a planilha ativa pelo nome
+    var planilha = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nomeDaAba);
+
+    // Verifique se a planilha foi encontrada
+    if (planilha) {
+      // Obtenha os dados na coluna V
+      var dadosColunaD = planilha.getRange("V:V").getValues();
+
+      // Encontre a primeira linha que contém "e mail ao fornecedor"
+      var linhaEncontrada = -1; // Inicialize com um valor que indica que a linha não foi encontrada
+
+      for (var i = 0; i < dadosColunaD.length; i++) {
+        if (dadosColunaD[i][0].toLowerCase().includes("e mail ao fornecedor")) {
+          // Defina a linha encontrada
+          linhaEncontrada = i + 1; // Adiciona 1 para obter o número da linha real
+
+          // Imprima a linha encontrada
+          Logger.log("Linha encontrada na coluna V da aba '" + nomeDaAba + "': " + linhaEncontrada);
+
+          // Saia do loop após encontrar a primeira ocorrência
+          break;
+        }
+      }
+
+      // Verifique se a linha foi encontrada antes de acessar os dados
+      if (linhaEncontrada !== -1) {
+        var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Cobrança 2023');
+        var columnToSearch = 1; // Coluna A
+        var startRow = linhaEncontrada;
+        var numRows = 1; // número total de linhas de dados (apenas a primeira linha)
+        var dataRange = sheet.getRange(startRow, 1, numRows, 23); // intervalo de dados (colunas A até W, começando da linha 7)
+        var data = dataRange.getValues(); // valores das células do intervalo de dados
+        var subject = 'COBRANÇA EMPENHOS';
+        var body = '<html><body>Olá, %s !<br><br>Identificamos empenho(s) emitido(s) pela Pró-reitoria de Pesquisa (CNPJ: 28.523.215/0033-93) com saldo(s) em aberto e gostaríamos de confirmar com vocês a situação deste(s).<br><br>Segue abaixo quadro resumo deste(s) empenho(s) para que vocês nos informem, caso ainda haja interesse em atender nosso pedido, uma programação de entrega do mesmo:<br><br>EMPENHO: %s<br>VALOR: R$ %s<br>PROGRAMAÇÃO DE ENTREGA (data)<br><br>Observação: No caso de materiais entregues/ serviços prestados, solicitamos o envio da nota fiscal correspondente e um canhoto com assinatura do recebedor, para que possamos verificar a situação e prosseguir com os trâmites.</body></html>';
+
+        var row = data[0];
+        var nomeFornecedor = row[1]; // valor da coluna B
+        var empenho = row[0]; // valor da coluna A
+        var valor = row[2]; // valor da coluna C
+        var emailAddress = row[20]; // valor da coluna U
+
+        // Logs para verificar o conteúdo das variáveis
+        Logger.log("Nome do Fornecedor: " + nomeFornecedor);
+        Logger.log("Empenho: " + empenho);
+        Logger.log("Valor: " + valor);
+        Logger.log("Endereço de E-mail: " + emailAddress);
+
+        // Verifica se as células estão vazias antes de criar o rascunho do e-mail
+        if (empenho && valor && emailAddress) {
+          var message = body.replace('%s', nomeFornecedor).replace('%s', empenho).replace('%s', valor); // substitui os valores no corpo do e-mail
+
+          // Cria um rascunho do e-mail em vez de enviá-lo
+          GmailApp.createDraft(emailAddress, subject, '', {htmlBody: message});
+
+          ui.alert("Rascunho de e-mail criado com sucesso!");
+        } else {
+          ui.alert("Não foi possível criar o rascunho do e-mail porque faltam informações na planilha.");
+        }
+      } else {
+        ui.alert("Não foi possível encontrar a linha com 'e mail ao fornecedor' na coluna V.");
+      }
+    } else {
+      ui.alert("Planilha ou aba não encontrada. Verifique os nomes da planilha e da aba.");
+    }
+  }
+}
