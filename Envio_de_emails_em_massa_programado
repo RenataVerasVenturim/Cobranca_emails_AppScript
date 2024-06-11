@@ -4,27 +4,32 @@ function enviarEmailsEmMassaComConfirmacao2023agendado() {
     var nomeDaAba = "Cobrança 2023";
 
     // Obtenha a planilha ativa pelo nome
-    var planilha = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nomeDaAba);
+    //var planilha = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nomeDaAba);
+    var planilha = SpreadsheetApp.openById('INSERIR_ID_DA_PLANILHA').getSheetByName(nomeDaAba);
 
     // Verifique se a planilha foi encontrada
     if (planilha) {
       // Obtenha os dados na coluna V
-      var dadosColunaD = planilha.getRange("V:V").getValues();
+      var dadosColunaD = planilha.getRange("W:W").getValues();
 
-      // Inicialize uma array para armazenar todas as linhas que atendem ao critério
-      var linhasEncontradas = [];
+    // Inicialize uma array para armazenar todas as linhas que atendem ao critério
+      var linhasEncontradasPendenciaFornecedor = [];
+      var linhasEncontradasPendenciaCurso = [];
 
       // Percorra todas as linhas
       for (var i = 0; i < dadosColunaD.length; i++) {
         if (dadosColunaD[i][0].toLowerCase().includes("entrega/ interesse")) {
           // Adicione a linha à array de linhas encontradas
-          linhasEncontradas.push(i + 1);
+          linhasEncontradasPendenciaFornecedor.push(i + 1);
+        } else if (dadosColunaD[i][0].toLowerCase().includes("coordenação para confirmação")) {
+          // Adicione a linha à array de linhas encontradas
+          linhasEncontradasPendenciaCurso.push(i + 1);
         }
-      }
+      } 
 
-      // Percorra todas as linhas encontradas
-      for (var j = 0; j < linhasEncontradas.length; j++) {
-        var linhaEncontrada = linhasEncontradas[j];
+      // Percorra todas as linhas encontradas da array de cobrança ao fornecedor
+      for (var j = 0; j < linhasEncontradasPendenciaFornecedor.length; j++) {
+        var linhaEncontrada = linhasEncontradasPendenciaFornecedor[j];
 
         var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Cobrança 2023');
         var startRow = linhaEncontrada; // início da linha de dados
@@ -55,10 +60,46 @@ function enviarEmailsEmMassaComConfirmacao2023agendado() {
         }
       }
 
-    }
-    
-  
+      // Percorra todas as linhas encontradas da array de cobrança ao fornecedor
+      for (var j = 0; j < linhasEncontradasPendenciaCurso.length; j++) {
+        var linhaEncontrada = linhasEncontradasPendenciaCurso[j];
+
+        var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Cobrança 2023');
+        var startRow = linhaEncontrada; // início da linha de dados
+        var numRows = 1; // número total de linhas de dados (apenas a primeira linha)
+        var dataRange = sheet.getRange(startRow, 1, numRows, 23); // intervalo de dados (colunas A até W, começando da linha 7)
+        var data = dataRange.getValues(); // valores das células do intervalo de dados
+        var subject = 'Confirmação de recebimento de material / prestação de serviços - %s';
+        var body = '<html><body>Prezados,do(a) %s<br><br>Informamos que a DFI/GPF/PROPPI ainda não recebeu o envio da nota fiscal , para pagamento ao fornecedor. Poderiam verificar o que ocorreu?<br><br>    Solicitamos que nos confirmem se houve o recebimento do material/ execução dos serviços e enviem a NF-E via Google Forms, via link abaixo para que possamos proceder com o pagamento ao fornecedor:<br><br>    <a href="https://bit.ly/3I1YxE9">https://bit.ly/3I1YxE9</a><br><br>%s<br>    EMPENHO:  %s <br>Valor: R$  %s <br> PROCESSO: %s</body></html>';
+
+        for (var k = 0; k < data.length; k++) {
+          var row = data[k];  // <-- Correção aqui, use a variável k para obter cada linha
+          var nomeCurso = row[10]; // valor da coluna K
+          var naturezaDespesa = row[5];//valor da coluna F
+          var empenho = row[0]; // valor da coluna A
+          var valor = row[2]; // valor da coluna C          
+          var processo = row[3]; // valor da coluna D
+          var emailAddress = row[21]; // valor da coluna U
+
+          Logger.log("Linha: " + startRow + ", e-mail: " + emailAddress);
+
+          // Verifica se as células estão vazias antes de enviar o e-mail
+          if (empenho && valor && processo && emailAddress) {
+            var message = body.replace('%s', nomeCurso).replace('%s', naturezaDespesa).replace('%s', empenho).replace('%s', valor).replace('%s', processo) // substitui os valores no corpo do e-mail
+            subject = subject.replace('%s', nomeCurso);
+            MailApp.sendEmail({
+              to: emailAddress,
+              subject: subject,
+              htmlBody: message,
+            });
+          }
+        }
+      } 
+    }    
 }
+
+
+
 
 
 
