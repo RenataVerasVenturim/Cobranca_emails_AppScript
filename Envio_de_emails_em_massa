@@ -10,8 +10,8 @@ function enviarEmailsEmMassaComConfirmacao() {
 
     // Verifique se a planilha foi encontrada
     if (planilha) {
-      // Obtenha os dados na coluna V
-      var dadosColunaD = planilha.getRange("V:V").getValues();
+      // Obtenha os dados na coluna W
+      var dadosColunaD = planilha.getRange("W:W").getValues();
 
       // Inicialize uma array para armazenar todas as linhas que atendem ao critério
       var linhasEncontradas = [];
